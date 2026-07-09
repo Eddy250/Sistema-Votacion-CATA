@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+votes.db
+static/img/*
+!static/img/francovidal.png
+!static/img/juan.jpg
+!static/img/maria.jpg

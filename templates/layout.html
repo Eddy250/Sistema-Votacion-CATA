@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Votación Escolar</title>
+    <!-- Tailwind CSS (Local para uso sin internet) -->
+    <script src="{{ url_for('static', filename='js/tailwindcss.js') }}"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <!-- Header / Nav -->
+    <header class="w-full max-w-4xl bg-blue-600 rounded-lg shadow-md p-6 mb-8 text-center text-white">
+        <h1 class="text-3xl font-bold">Elecciones de Alcaldía Estudiantil</h1>
+        <p class="mt-2 text-blue-100">Colegio Adventista Tupac Amaru - Elige a tu representante</p>
+    </header>
+
+    <!-- Content -->
+    <main class="w-full max-w-4xl flex-grow">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}"
+            role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-6 text-gray-500 text-sm text-center">
+        © 2026 Votación Electrónica Escolar. <a href="/admin" class="text-blue-500 hover:underline">Acceso
+            Admin</a>
+    </footer>
+
+</body>
+
+</html>

@@ -1,0 +1,51 @@
+{
+  "name": "Flujo de Votación y Correos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nuevo-voto",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook (Recibe Voto)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "nuevo-voto"
+    },
+    {
+      "parameters": {
+        "fromEmail": "alcaldia@tucolegio.edu.pe",
+        "toEmail": "={{ $json.body.voter_email }}",
+        "subject": "🟢 Confirmación Oficial de Voto Electrónico",
+        "html": "<div style=\"font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;\">\n  <h2 style=\"color: #4f46e5;\">¡Hola {{ $json.body.voter_nombre }}!</h2>\n  <p>El sistema central ha registrado tu participación cívica con éxito.</p>\n  <p><strong>Candidato Seleccionado:</strong> {{ $json.body.candidato_nombre }}</p>\n  <p style=\"color: #666; font-size: 12px;\">Código Criptográfico de Sesión: {{ $json.body.voter_codigo }}</p>\n  <hr style=\"border: 0; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 11px; color: #999;\">Este es un correo automático generado por el Sistema de Votaciones Next-Gen. No respondas a esta dirección.</p>\n</div>",
+        "options": {}
+      },
+      "id": "email-node",
+      "name": "FALTA MATERIAL: Correo Institucional",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [550, 300]
+    }
+  ],
+  "connections": {
+    "Webhook (Recibe Voto)": {
+      "main": [
+        [
+          {
+            "node": "FALTA MATERIAL: Correo Institucional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d742637f-682b-426a-93be-673415efd4d9"
+}

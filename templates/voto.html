@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="bg-white p-6 md:p-10 rounded-2xl shadow-xl border border-gray-200 w-full relative overflow-hidden">
+    <!-- Borde superior decorativo -->
+    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-700 to-indigo-600"></div>
+
+    <div class="mb-8 flex justify-between items-center border-b border-gray-100 pb-5 pt-2">
+        <div>
+            <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Selecciona a tu Candidato</h2>
+            <p class="text-sm text-gray-500 mt-1">Haz clic sobre la opción de tu preferencia.</p>
+        </div>
+        <span class="bg-blue-50 text-blue-700 border border-blue-200 shadow-sm text-sm font-bold px-4 py-2 rounded-full">
+            Votante: {{ voter_codigo }}
+        </span>
+    </div>
+
+    <form action="/voto" method="POST" id="voting-form" onsubmit="return handleFormSubmit(event)">
+        <!-- Input oculto con el código para no perderlo -->
+        <input type="hidden" name="voter_codigo" value="{{ voter_codigo }}">
+
+        <!-- Contenedor grid con un fondo sutil para destacarlo del blanco o gris exterior -->
+        <div class="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8 shadow-inner">
+            {% for c in candidatos %}
+            <label class="cursor-pointer relative candidatolabel block group perspective-1000">
+                <!-- Radio hidden -->
+                <input type="radio" name="candidato_id" value="{{ c.id }}" class="peer sr-only" required>
+
+                <div class="peer-checked:ring-[4px] peer-checked:ring-indigo-600 peer-checked:shadow-indigo-200 peer-checked:border-transparent rounded-2xl bg-white border border-gray-200 shadow-md hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-2 h-full flex flex-col overflow-hidden">
+                    
+                    <div class="h-52 bg-gray-100 border-b border-gray-100 overflow-hidden relative">
+                        {% if c.foto %}
+                        <img src="{{ url_for('static', filename=c.foto) }}" alt="Foto de {{ c.nombre }}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50 transition duration-500 group-hover:scale-105">
+                            <svg class="w-20 h-20 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        <!-- Gran Marca Roja 'X' sobre el candidato -->
+                        <div class="marca-x absolute inset-0 bg-red-50 bg-opacity-20 flex flex-col items-center justify-center pointer-events-none z-10 transition-all duration-300">
+                            <svg class="w-full h-full text-red-600 filter drop-shadow-2xl p-4 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 20L20 4M4 4l16 16"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-grow flex flex-col justify-center text-center">
+                        <span class="text-lg font-bold text-gray-800">{{ c.nombre }}</span>
+                        {% if c.descripcion %}
+                        <p class="text-xs text-gray-600 mt-2">{{ c.descripcion }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Checkmark flotante (oculto por defecto) -->
+                    <div
+                        class="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1 opacity-0 peer-checked:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </label>
+            {% endfor %}
+
+            {% if not candidatos %}
+            <div class="col-span-full text-center text-gray-500 py-8">
+                No hay candidatos registrados aún.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-end border-t pt-4">
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-200 shadow-md">
+                Confirmar Voto
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-6">
+                <svg class="h-10 w-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">Confirmar Voto</h3>
+            <p class="text-gray-500 mb-8">¿Estás seguro de registrar tu voto por el candidato seleccionado? Esta acción es final y no se puede deshacer.</p>
+            
+            <div class="flex flex-col-reverse sm:flex-row gap-3 justify-center">
+                <button type="button" onclick="closeConfirmModal()" class="w-full sm:w-1/2 bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-3 px-4 rounded-xl transition duration-200">
+                    Cancelar
+                </button>
+                <button type="button" onclick="confirmVote()" class="w-full sm:w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200">
+                    Sí, Votar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleFormSubmit(event) {
+        // Prevenir el envío automático
+        event.preventDefault();
+        // Mostrar el modal elegante
+        document.getElementById('confirmModal').classList.remove('hidden');
+        return false;
+    }
+
+    function closeConfirmModal() {
+        // Ocultar el modal
+        document.getElementById('confirmModal').classList.add('hidden');
+    }
+
+    function confirmVote() {
+        // Enviar el formulario ignorando el onsubmit
+        document.getElementById('voting-form').submit();
+    }
+</script>
+
+<style>
+    /* Mostrar la X grande roja y efecto cuando el input está checked */
+    input[type="radio"]:checked + div .marca-x {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .marca-x {
+        opacity: 0;
+        transform: scale(0.6);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+</style>
+{% endblock %}

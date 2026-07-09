@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="bg-white p-6 rounded-xl shadow-lg w-full mb-6">
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Panel de Administración</h2>
+        <div class="space-x-2 md:space-x-4 flex items-center">
+            <a href="/admin/candidatos" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2 px-3 md:px-4 rounded shadow transition-colors inline-block">Gestionar Candidatos</a>
+            <a href="/" class="text-blue-500 hover:text-blue-700 font-semibold text-xs md:text-sm">Volver al Inicio</a>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-center">
+            <div class="text-blue-500 text-sm font-semibold uppercase">Total Padrón</div>
+            <div class="text-3xl font-bold text-blue-700">{{ total_alumnos }}</div>
+        </div>
+        <div class="bg-green-50 border border-green-100 p-4 rounded-lg text-center">
+            <div class="text-green-500 text-sm font-semibold uppercase">Votos Emitidos</div>
+            <div class="text-3xl font-bold text-green-700">{{ votos_emitidos }} ({{ porcentaje_participacion }}%)</div>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-100 p-4 rounded-lg text-center">
+            <div class="text-yellow-500 text-sm font-semibold uppercase">Faltan por Votar</div>
+            <div class="text-3xl font-bold text-yellow-700">{{ total_alumnos - votos_emitidos }}</div>
+        </div>
+    </div>
+
+    <!-- Chart y Resultados list -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Gráfica -->
+        <div class="bg-gray-50 p-4 rounded-lg border">
+            <h3 class="font-bold text-gray-700 mb-4 text-center">Distribución de Votos</h3>
+            <canvas id="resultsChart"></canvas>
+        </div>
+
+        <!-- Tabla -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border rounded-lg">
+                <thead class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                    <tr>
+                        <th class="py-3 px-6 text-left">Candidato</th>
+                        <th class="py-3 px-6 text-center">Votos</th>
+                        <th class="py-3 px-6 text-center">%</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 text-sm font-light">
+                    {% for c in resultados %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="py-3 px-6 text-left whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="font-bold">{{ c.nombre }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-6 text-center font-bold text-blue-600">
+                            {{ c.votos }}
+                        </td>
+                        <td class="py-3 px-6 text-center">
+                            {{ c.porcentaje }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lista de Votantes -->
+    <div class="mt-8 bg-gray-50 p-4 rounded-lg border">
+        <h3 class="font-bold text-gray-700 mb-4 text-center">Registro de Votantes</h3>
+        <div class="overflow-x-auto max-h-96">
+            <table class="min-w-full bg-white border rounded-lg">
+                <thead class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal sticky top-0">
+                    <tr>
+                        <th class="py-3 px-6 text-left">Código</th>
+                        <th class="py-3 px-6 text-left">Nombre</th>
+                        <th class="py-3 px-6 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 text-sm font-light">
+                    {% for v in voters_list %}
+                    <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="py-3 px-6 text-left whitespace-nowrap font-bold">{{ v.codigo }}</td>
+                        <td class="py-3 px-6 text-left">{{ v.nombre or '---' }}</td>
+                        <td class="py-3 px-6 text-center">
+                            {% if v.ha_votado %}
+                            <span class="bg-green-100 text-green-800 py-1 px-3 rounded-full text-xs font-semibold">Ya Votó</span>
+                            {% else %}
+                            <span class="bg-yellow-100 text-yellow-800 py-1 px-3 rounded-full text-xs font-semibold">Pendiente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not voters_list %}
+                    <tr>
+                        <td colspan="3" class="py-4 text-center text-gray-500">No hay votantes registrados.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Cargar Chart.js (Local) -->
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const labels = {{ chart_labels | tojson | safe }};
+        const data = {{ chart_data | tojson | safe }};
+
+        const ctx = document.getElementById('resultsChart').getContext('2d');
+        const resultsChart = new Chart(ctx, {
+            type: 'bar', // Puede ser 'pie' o 'doughnut'
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Votos',
+                    data: data,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
